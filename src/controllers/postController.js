@@ -1,14 +1,8 @@
 import Post from '../models/post';
 import slugify from 'slugify';
-
-const getBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
-    });
-}
+import aqp from 'api-query-params';
+import minioClient from '../configs/minio.client';
+import fs from 'fs'
 
 const addNewPost = async (req, res) => {
     if (!req.file) {
@@ -42,10 +36,32 @@ const getPost = async (req, res) => {
 }
 
 const getPosts = async (req, res) => {
-    const response = await Post.find()
+    const { filter, skip, sort, projection, population } = aqp(req.query);
+    const { page: currentPage, limit } = req.query
+    delete filter.page
+    delete filter.limit
+    let offset = (+currentPage - 1) * (+limit)
+    let defaultLimit = +limit ? +limit : 6
+
+    const totalItems = (await Post.find(filter)).length
+    const totalPages = Math.ceil(totalItems / defaultLimit)
+
+    const response = await Post.find(filter)
+        .skip(offset)
+        .limit(defaultLimit)
+        .sort(sort)
+        .select(projection)
+        .populate(population)
+        .exec()
     return res.status(200).json({
         success: response ? true : false,
         message: response ? "Tải bài viết thành công" : "Tải bài viết thất bại",
+        meta: {
+            current: +currentPage,
+            pageSize: +limit,
+            pages: totalPages,
+            total: totalItems
+        },
         data: response ? response : null
     })
 }
@@ -78,6 +94,36 @@ const deletePost = async (req, res) => {
     })
 }
 
+const uploadFile = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({
+            message: "Không có file"
+        })
+    }
+    const bucket = "uploads"
+    const filename = Date.now() + "-" + req.file.originalname;
+
+    const exists = await minioClient.bucketExists(bucket);
+    if (!exists) {
+        await minioClient.makeBucket(bucket);
+    }
+
+    //upload to minio
+    await minioClient.putObject(
+        bucket,
+        filename,
+        req.file.buffer,
+        req.file.size,
+        { "Content-Type": req.file.mimetype }
+    );
+
+    const url = `http://10.10.0.245:9000/${bucket}/${filename}`
+    return res.status(200).json({
+        url
+    })
+
+}
+
 module.exports = {
-    addNewPost, getPost, getPosts, updatePost, deletePost
+    addNewPost, getPost, getPosts, updatePost, deletePost, uploadFile
 }

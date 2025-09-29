@@ -10,5 +10,7 @@ router.get("/", postController.getPosts);
 router.put("/:pid", postController.updatePost);
 router.delete("/:pid", postController.deletePost);
 router.get("/:pid", postController.getPost);
+// test minio
+router.post("/upload", upload.single('file'), postController.uploadFile);
 
 export default router;
