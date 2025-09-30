@@ -15,6 +15,9 @@ let formSchema = new mongoose.Schema({
         ref: "FormCategory",
         require: true
     },
+    mimetype: {
+        type: String
+    }
 }, {
     timestamps: true
 })

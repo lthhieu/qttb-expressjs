@@ -24,6 +24,7 @@ const getForms = async (req, res) => {
             select: 'name'
         })
         .exec()
+
     return res.status(200).json({
         success: response ? true : false,
         message: response ? "Tải biểu mẫu thành công" : "Tải biểu mẫu thất bại",
@@ -38,8 +39,10 @@ const getForms = async (req, res) => {
 }
 
 const addNewForm = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Chưa có file" });
+    }
     const { name, issueDate, categoryFormId } = req.body;
-    console.log(name, issueDate, categoryFormId)
     if (!name || !issueDate || !categoryFormId) {
         return res.status(400).json({
             success: false,
@@ -52,11 +55,33 @@ const addNewForm = async (req, res) => {
             message: "id danh mục không đúng dịnh dạng"
         })
     }
+    const base64File = req.file.buffer.toString("base64");
 
-    const response = await Form.create({ name, issueDate, categoryFormId })
+    const response = await Form.create({ name, issueDate, categoryFormId, file: base64File, mimetype: req.file.mimetype })
     return res.status(201).json({
         success: response ? true : false,
         message: response ? "Tạo biểu mẫu thành công" : "Tạo biểu mẫu thất bại",
+        data: response ? response : null
+    })
+}
+
+const addNewPost = async (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ success: false, message: "Chưa có thumbnail" });
+    }
+    const base64Image = req.file.buffer.toString("base64");
+    const { title, content } = req.body;
+    if (!title || !content) {
+        return res.status(400).json({
+            success: false,
+            message: "thiếu title hoặc content"
+        })
+    }
+    const slug = slugify(title, { locale: 'vi' })
+    const response = await Post.create({ title, content, thumbnail: base64Image, slug, mimetype: req.file.mimetype })
+    return res.status(201).json({
+        success: response ? true : false,
+        message: response ? "Tạo bài viết thành công" : "Tạo bài viết thất bại",
         data: response ? response : null
     })
 }

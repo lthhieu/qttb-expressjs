@@ -6,7 +6,7 @@ import multer from "multer";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post("/", formController.addNewForm);
+router.post("/", upload.single("file"), formController.addNewForm);
 router.get("/", formController.getForms);
 
 // router.get("/", postController.getPosts);
