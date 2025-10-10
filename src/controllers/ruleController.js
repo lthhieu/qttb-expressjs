@@ -43,7 +43,6 @@ const addNewRule = async (req, res) => {
         return res.status(400).json({ success: false, message: "Chưa có file" });
     }
     const { bio, issueDate, signNumber, categoryRuleId } = req.body;
-    console.log(req.body)
     if (!bio || !issueDate || !signNumber || !categoryRuleId) {
         return res.status(400).json({
             success: false,

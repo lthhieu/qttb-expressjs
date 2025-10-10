@@ -5,6 +5,8 @@ import multer from "multer";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+
+router.get("/upload1", postController.getPresignedUrl);
 router.post("/", upload.single("thumbnail"), postController.addNewPost);
 router.get("/", postController.getPosts);
 router.put("/:pid", postController.updatePost);
@@ -12,5 +14,7 @@ router.delete("/:pid", postController.deletePost);
 router.get("/:pid", postController.getPost);
 // test minio
 router.post("/upload", upload.single('file'), postController.uploadFile);
+
+
 
 export default router;

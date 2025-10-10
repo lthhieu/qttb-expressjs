@@ -1,8 +1,25 @@
 import Post from '../models/post';
 import slugify from 'slugify';
 import aqp from 'api-query-params';
-import minioClient from '../configs/minio.client';
+// import minioClient from '../configs/minio.client';
 import fs from 'fs'
+
+
+import * as Minio from "minio";
+
+const minioClient = new Minio.Client({
+    endPoint: "10.10.0.245", // IP server MinIO
+    port: 9000,
+    useSSL: false,
+    accessKey: "minioadmin",
+    secretKey: "minioadmin",
+});
+
+// Tạo link truy cập tạm thời 60 phút
+async function getPresignedUrl() {
+    const url = await minioClient.presignedGetObject("images-demo", "548269745_1300496288531074_7470413029836420212_n (1).jpg", 60 * 60);
+    console.log("Temporary URL:", url);
+}
 
 const addNewPost = async (req, res) => {
     if (!req.file) {
@@ -95,35 +112,35 @@ const deletePost = async (req, res) => {
 }
 
 const uploadFile = async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({
-            message: "Không có file"
-        })
-    }
-    const bucket = "uploads"
-    const filename = Date.now() + "-" + req.file.originalname;
+    // if (!req.file) {
+    //     return res.status(400).json({
+    //         message: "Không có file"
+    //     })
+    // }
+    // const bucket = "uploads"
+    // const filename = Date.now() + "-" + req.file.originalname;
 
-    const exists = await minioClient.bucketExists(bucket);
-    if (!exists) {
-        await minioClient.makeBucket(bucket);
-    }
+    // const exists = await minioClient.bucketExists(bucket);
+    // if (!exists) {
+    //     await minioClient.makeBucket(bucket);
+    // }
 
-    //upload to minio
-    await minioClient.putObject(
-        bucket,
-        filename,
-        req.file.buffer,
-        req.file.size,
-        { "Content-Type": req.file.mimetype }
-    );
+    // //upload to minio
+    // await minioClient.putObject(
+    //     bucket,
+    //     filename,
+    //     req.file.buffer,
+    //     req.file.size,
+    //     { "Content-Type": req.file.mimetype }
+    // );
 
-    const url = `http://10.10.0.245:9000/${bucket}/${filename}`
-    return res.status(200).json({
-        url
-    })
+    // const url = `http://10.10.0.245:9000/${bucket}/${filename}`
+    // return res.status(200).json({
+    //     url
+    // })
 
 }
 
 module.exports = {
-    addNewPost, getPost, getPosts, updatePost, deletePost, uploadFile
+    addNewPost, getPost, getPosts, updatePost, deletePost, uploadFile, getPresignedUrl
 }
